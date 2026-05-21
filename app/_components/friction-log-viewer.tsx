@@ -68,7 +68,7 @@ function FormattedText({ text }: { text: string }) {
   });
 
   const parts: ReactNode[] = [];
-  const regex = /(\*\*(.+?)\*\*|`([^`]+)`)/g;
+  const regex = /`([^`]+)`/g;
   let lastIndex = 0;
   let match;
 
@@ -78,22 +78,14 @@ function FormattedText({ text }: { text: string }) {
         ...autoCodeify(cleaned.slice(lastIndex, match.index), match.index),
       );
     }
-    if (match[2]) {
-      parts.push(
-        <strong key={match.index} className="font-semibold text-foreground">
-          {match[2]}
-        </strong>,
-      );
-    } else if (match[3]) {
-      parts.push(
-        <code
-          key={match.index}
-          className="rounded bg-muted px-1 py-0.5 text-[0.85em] font-mono text-foreground/90"
-        >
-          {match[3]}
-        </code>,
-      );
-    }
+    parts.push(
+      <code
+        key={match.index}
+        className="rounded bg-muted px-1 py-0.5 text-[0.85em] font-mono text-foreground/90"
+      >
+        {match[1]}
+      </code>,
+    );
     lastIndex = match.index + match[0].length;
   }
 
