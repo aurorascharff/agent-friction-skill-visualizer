@@ -67,15 +67,16 @@ function FormattedText({ text }: { text: string }) {
     return "";
   });
 
+  const stripped = cleaned.replace(/\*\*(.+?)\*\*/g, "$1");
   const parts: ReactNode[] = [];
   const regex = /`([^`]+)`/g;
   let lastIndex = 0;
   let match;
 
-  while ((match = regex.exec(cleaned)) !== null) {
+  while ((match = regex.exec(stripped)) !== null) {
     if (match.index > lastIndex) {
       parts.push(
-        ...autoCodeify(cleaned.slice(lastIndex, match.index), match.index),
+        ...autoCodeify(stripped.slice(lastIndex, match.index), match.index),
       );
     }
     parts.push(
@@ -89,8 +90,8 @@ function FormattedText({ text }: { text: string }) {
     lastIndex = match.index + match[0].length;
   }
 
-  if (lastIndex < cleaned.length) {
-    parts.push(...autoCodeify(cleaned.slice(lastIndex), lastIndex));
+  if (lastIndex < stripped.length) {
+    parts.push(...autoCodeify(stripped.slice(lastIndex), lastIndex));
   }
 
   return (
