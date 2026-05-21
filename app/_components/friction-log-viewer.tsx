@@ -305,11 +305,7 @@ function SectionToggle({
           <RunInfoGrid entries={section.entries} />
         ) : (
           section.entries.map((entry, i) => (
-            <EntryToggle
-              key={i}
-              entry={entry}
-              entryId={`${sectionId}-e${i}`}
-            />
+            <EntryToggle key={i} entry={entry} entryId={`${sectionId}-e${i}`} />
           ))
         )}
         {section.subsections.map((sub, i) => (
