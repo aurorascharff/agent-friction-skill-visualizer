@@ -5,15 +5,20 @@
  *   drafts/<id>.json                — agent-posted draft awaiting human approval (random access by id)
  *   reports/<yyyy-mm>/<id>.json     — promoted report, partitioned by month
  *
+ * All blobs are written with `access: "private"` so they are NOT readable
+ * via direct URL. Reads go through the @vercel/blob `get()` API which
+ * authenticates with BLOB_READ_WRITE_TOKEN. This is what gives us the
+ * "your code doesn't leak" governance story: even if a draft URL ends
+ * up in a log, the underlying blob can't be fetched without the token.
+ *
  * Drafts are short-lived (10 min TTL, checked on read). Promoted reports
  * are append-only; deletion is a manual operation against the Blob store.
  *
- * The only credential is BLOB_READ_WRITE_TOKEN, set as a Vercel env var.
  * INGEST_SECRET is used to HMAC-sign draft ids so that `?draft=…` URLs
  * can't be forged by clients.
  */
 
-import { put, head, del } from "@vercel/blob";
+import { put, get, del } from "@vercel/blob";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Report } from "./payload";
 
@@ -62,6 +67,20 @@ type DraftEnvelope = {
   report: Report;
 };
 
+async function readPrivateJson<T>(pathname: string): Promise<T | null> {
+  const result = await get(pathname, {
+    access: "private",
+    useCache: false,
+  });
+  if (!result || result.statusCode !== 200 || !result.stream) return null;
+  const text = await new Response(result.stream).text();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export async function writeDraft(
   signedId: string,
   report: Report,
@@ -76,7 +95,7 @@ export async function writeDraft(
     `drafts/${rawId}.json`,
     JSON.stringify(envelope),
     {
-      access: "public",
+      access: "private",
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: false,
@@ -88,18 +107,11 @@ export async function writeDraft(
 export async function readDraft(signedId: string): Promise<Report | null> {
   const rawId = verifyDraftId(signedId);
   if (!rawId) return null;
-  let blob;
-  try {
-    blob = await head(`drafts/${rawId}.json`);
-  } catch {
-    return null;
-  }
-  const res = await fetch(blob.url, { cache: "no-store" });
-  if (!res.ok) return null;
-  const envelope = (await res.json()) as DraftEnvelope;
+  const envelope = await readPrivateJson<DraftEnvelope>(`drafts/${rawId}.json`);
+  if (!envelope) return null;
   if (Date.now() - envelope.created_at > DRAFT_TTL_MS) {
     // Best-effort cleanup; ignore failure.
-    void del(blob.url);
+    void del(`drafts/${rawId}.json`);
     return null;
   }
   return envelope.report;
@@ -109,8 +121,7 @@ export async function deleteDraft(signedId: string): Promise<void> {
   const rawId = verifyDraftId(signedId);
   if (!rawId) return;
   try {
-    const blob = await head(`drafts/${rawId}.json`);
-    await del(blob.url);
+    await del(`drafts/${rawId}.json`);
   } catch {
     /* already gone */
   }
@@ -127,7 +138,7 @@ export async function promoteDraftToReport(report: Report): Promise<string> {
       report,
     }),
     {
-      access: "public",
+      access: "private",
       contentType: "application/json",
       addRandomSuffix: false,
       allowOverwrite: false,
