@@ -1,6 +1,15 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+/**
+ * Renders a friction-log markdown file with collapsible sections,
+ * severity dots, source-tag pills, and anchor links for deep-linking
+ * to specific sections and entries.
+ *
+ * This is the canonical viewer — kept in sync with the DX Agent's copy
+ * at app/dashboard/friction/_components/friction-markdown-viewer.tsx.
+ */
+
+import { type ReactNode, useState, useEffect } from "react";
 import { Check, ChevronRight, Link2, Search, Wrench } from "lucide-react";
 import {
   extractTitle,
@@ -23,10 +32,11 @@ const SOURCE_TAG_STYLE: Record<string, string> = {
   skill: "bg-cyan-500/15 text-cyan-400",
   url: "bg-indigo-500/15 text-indigo-400",
   sandbox: "bg-orange-500/15 text-orange-400",
+  "error output": "bg-rose-500/15 text-rose-400",
 };
 
 const SOURCE_TAG_RE =
-  /\[(web search|docs|training data|agents\.md|skill|url|sandbox)\]/g;
+  /\[(web search|docs|training data|agents\.md|skill|url|sandbox|error output)\]/g;
 
 const CODE_LIKE =
   /(?:^|\s)(\/[\w./-]+\.\w+|[\w./-]*\b(?:next\.config|tsconfig|package\.json|\.env|middleware|proxy\.ts)\b[\w.]*|\w+\(\))/g;
@@ -36,13 +46,10 @@ function autoCodeify(plain: string, keyBase: number): ReactNode[] {
   let last = 0;
   let m;
   CODE_LIKE.lastIndex = 0;
-
   while ((m = CODE_LIKE.exec(plain)) !== null) {
     const token = m[1] ?? m[0];
     const tokenStart = m.index + (m[0].length - token.length);
-    if (tokenStart > last) {
-      nodes.push(plain.slice(last, tokenStart));
-    }
+    if (tokenStart > last) nodes.push(plain.slice(last, tokenStart));
     nodes.push(
       <code
         key={`ac-${keyBase}-${tokenStart}`}
@@ -53,10 +60,7 @@ function autoCodeify(plain: string, keyBase: number): ReactNode[] {
     );
     last = tokenStart + token.length;
   }
-
-  if (last < plain.length) {
-    nodes.push(plain.slice(last));
-  }
+  if (last < plain.length) nodes.push(plain.slice(last));
   return nodes;
 }
 
@@ -66,19 +70,16 @@ function FormattedText({ text }: { text: string }) {
     sourceTags.push({ label: tag, style: SOURCE_TAG_STYLE[tag] ?? "" });
     return "";
   });
-
   const stripped = cleaned.replace(/\*\*(.+?)\*\*/g, "$1");
   const parts: ReactNode[] = [];
   const regex = /`([^`]+)`/g;
   let lastIndex = 0;
   let match;
-
   while ((match = regex.exec(stripped)) !== null) {
-    if (match.index > lastIndex) {
+    if (match.index > lastIndex)
       parts.push(
         ...autoCodeify(stripped.slice(lastIndex, match.index), match.index),
       );
-    }
     parts.push(
       <code
         key={match.index}
@@ -89,11 +90,8 @@ function FormattedText({ text }: { text: string }) {
     );
     lastIndex = match.index + match[0].length;
   }
-
-  if (lastIndex < stripped.length) {
+  if (lastIndex < stripped.length)
     parts.push(...autoCodeify(stripped.slice(lastIndex), lastIndex));
-  }
-
   return (
     <>
       {parts}
@@ -111,24 +109,25 @@ function FormattedText({ text }: { text: string }) {
 
 function AnchorLink({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
-
   return (
     <button
       onClick={(e) => {
         e.stopPropagation();
         e.preventDefault();
-        // Preserve the existing hash (which carries `log=<encoded>` on the
-        // /view route) and add an `entry=<id>` param. Bare `#<id>` would
-        // throw away the encoded log and break shareable deep-links.
-        const params = new URLSearchParams(
-          window.location.hash.replace(/^#/, ""),
-        );
-        params.set("entry", id);
-        const newHash = `#${params.toString()}`;
+        // On the /view route, preserve the #log=<encoded> hash and add entry=<id>.
+        // On other routes, use a plain #id fragment.
+        const currentHash = window.location.hash.replace(/^#/, "");
+        let newHash: string;
+        if (currentHash.includes("log=")) {
+          const params = new URLSearchParams(currentHash);
+          params.set("entry", id);
+          newHash = `#${params.toString()}`;
+        } else {
+          newHash = `#${id}`;
+        }
         window.history.replaceState(null, "", newHash);
-        navigator.clipboard.writeText(
-          `${window.location.origin}${window.location.pathname}${window.location.search}${newHash}`,
-        );
+        const url = `${window.location.origin}${window.location.pathname}${window.location.search}${newHash}`;
+        navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
@@ -168,7 +167,9 @@ function EntryToggle({
       >
         {entryId && <AnchorLink id={entryId} />}
         {dot && (
-          <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
+          <span
+            className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`}
+          />
         )}
         {ActionIcon && (
           <ActionIcon className="w-3.5 h-3.5 mt-1 shrink-0 text-muted-foreground/60" />
@@ -186,7 +187,9 @@ function EntryToggle({
         {entryId && <AnchorLink id={entryId} />}
         <ChevronRight className="w-3.5 h-3.5 mt-1 shrink-0 text-muted-foreground/60 transition-transform group-open/entry:rotate-90" />
         {dot && (
-          <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
+          <span
+            className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`}
+          />
         )}
         {ActionIcon && (
           <ActionIcon className="w-3.5 h-3.5 mt-1 shrink-0 text-muted-foreground/60" />
@@ -209,10 +212,6 @@ function EntryToggle({
 }
 
 function RunInfoGrid({ entries }: { entries: LogEntry[] }) {
-  // Render Run Info / Prompt entries with the same paragraph rhythm as
-  // every other section so the dropdowns look visually consistent.
-  // `FormattedText` already turns the `**Key:**` prefix into a bold span,
-  // which carries the key/value distinction without a separate dl grid.
   return (
     <div>
       {entries
@@ -230,10 +229,6 @@ function RunInfoGrid({ entries }: { entries: LogEntry[] }) {
 }
 
 function PromptBlock({ entries }: { entries: LogEntry[] }) {
-  // Renders the Prompt section as a terminal-style block: dark tinted
-  // background, monospace, a `>` prompt prefix per line. Makes the
-  // user's verbatim request visually distinct from the agent's
-  // narrative below.
   const lines = entries
     .map((entry) => entry.text.replace(/^>\s?/, "").trim())
     .filter((line) => line.length > 0);
@@ -325,6 +320,21 @@ function SectionToggle({
   );
 }
 
+function scrollAndHighlight(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let parent: HTMLElement | null = el.parentElement;
+  while (parent) {
+    if (parent.tagName === "DETAILS") {
+      (parent as HTMLDetailsElement).open = true;
+    }
+    parent = parent.parentElement;
+  }
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.classList.add("animate-highlight");
+  window.setTimeout(() => el.classList.remove("animate-highlight"), 2600);
+}
+
 export function FrictionLogViewer({ markdown }: { markdown: string }) {
   const title = extractTitle(markdown);
   const allSections = parseSections(markdown);
@@ -343,6 +353,20 @@ export function FrictionLogViewer({ markdown }: { markdown: string }) {
   const sections = [...allSections].sort(
     (a, b) => sectionOrder(a.title) - sectionOrder(b.title),
   );
+
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return;
+    // On /view, the hash contains log=<encoded>&entry=<id>.
+    // On /submit, it's empty. Extract entry= if present.
+    const params = new URLSearchParams(hash);
+    const entryId = params.get("entry");
+    const targetId = entryId ?? (hash.includes("=") ? null : hash);
+    if (!targetId) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollAndHighlight(targetId));
+    });
+  }, []);
 
   if (sections.length === 0 && !title) {
     return (

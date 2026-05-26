@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import type { Metadata } from "next";
 import {
   DraftReview,
@@ -22,10 +22,12 @@ export default function SubmitPage({
   return (
     <main className="pb-24">
       <Suspense fallback={<DraftReviewSkeleton />}>
-        {searchParams.then(({ draft }) => {
-          if (!draft) notFound();
-          return <DraftReview draftId={draft} />;
-        })}
+        <ViewTransition>
+          {searchParams.then(({ draft }) => {
+            if (!draft) notFound();
+            return <DraftReview draftId={draft} />;
+          })}
+        </ViewTransition>
       </Suspense>
     </main>
   );

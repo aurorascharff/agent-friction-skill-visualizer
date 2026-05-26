@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ViewContent, ViewSkeleton } from "@/features/log/components/view-content";
@@ -22,7 +22,9 @@ export default function ViewPage() {
         </Link>
       </div>
       <Suspense fallback={<ViewSkeleton />}>
-        <ViewContent />
+        <ViewTransition>
+          <ViewContent />
+        </ViewTransition>
       </Suspense>
     </main>
   );
