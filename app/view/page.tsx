@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, ViewTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { ViewContent, ViewSkeleton } from "@/features/log/components/view-content";
+import { ViewContent } from "@/features/log/components/view-content";
 
 export const metadata: Metadata = {
   title: "Friction Log Viewer — View",
@@ -21,7 +21,7 @@ export default function ViewPage() {
           Paste another
         </Link>
       </div>
-      <Suspense fallback={<ViewSkeleton />}>
+      <Suspense>
         <ViewTransition>
           <ViewContent />
         </ViewTransition>

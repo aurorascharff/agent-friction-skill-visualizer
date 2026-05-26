@@ -1,30 +1,38 @@
 # Friction Log Viewer
 
-A standalone Next.js app for viewing a `friction-log.md` file in a clean, collapsible layout.
+Companion app for the [agent-friction-skill](https://github.com/aurorascharff/agent-friction-skill). Renders friction logs, accepts passive agent submissions, and stores reports for triage.
 
-Live at **<https://agent-friction-skill.vercel.app/>**.
+Live at **[agent-friction-skill.vercel.app](https://agent-friction-skill.vercel.app/)**.
 
 ## Routes
 
-- **`/`** — centered paste box plus a "Fill with example" button. Paste a log or click "View" to navigate to `/view#log=…`.
-- **`/view#log=<payload>`** — render a log from a URL hash. Click "Copy share link" to build one. The log never leaves the browser; the fragment is gzip+base64-encoded client-side.
+- **`/`** — paste a friction log markdown, click View
+- **`/view#log=…`** — renders a log from a URL fragment. Nothing leaves the browser — share the link with anyone
+- **`/submit?draft=<id>`** — human reviews an agent-submitted report, clicks Submit or Discard
+- **`/submit/success`** — confirmation after submission
 
-## Local development
+## API
+
+- **`POST /api/draft`** — agents POST a structured payload ([schema](lib/payload.ts)), get back a `review_url`. Rate-limited, schema-validated, drafts expire in 10 min.
+- **`GET /api/reports`** — lists all stored reports with summary, severity counts, framework. Bearer-token gated.
+- **`GET /api/reports/[month]/[id]`** — raw markdown of a single report. Bearer-token gated.
+- **`GET /api/triage`** — flat list of every friction point across every report. Bearer-token gated.
+
+## Env vars
+
+| Var | Purpose |
+|-----|---------|
+| `BLOB_READ_WRITE_TOKEN` | Auto-provisioned by Vercel Blob |
+| `INGEST_SECRET` | HMAC-signs draft IDs. `openssl rand -hex 32` |
+| `REPORTS_API_TOKEN` | Shared secret for the reports/triage API. Same value on the DX Agent |
+
+## Local dev
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev
 pnpm typecheck
 pnpm build
 ```
 
-## What it renders
-
-- `# / ## / ###` headings become collapsible sections (Summary, Action Items, Log).
-- Bullets prefixed with 🔴/🟡/🟢 render as colored dots.
-- Action items prefixed with 🔧 / 🔍 get a wrench / magnifier icon.
-- Source tags like `[web search]`, `[docs]`, `[sandbox]` render as colored pills.
-- Backticked spans and code-like paths (`/path/to/file.ts`, `next.config`, `proxy.ts`, `cookies()`) auto-format as inline code.
-- `**bold**` survives.
-
-No backend, no database, no auth. Everything is client-side.
+For ingest + submission locally: `vercel env pull .env.local`.
