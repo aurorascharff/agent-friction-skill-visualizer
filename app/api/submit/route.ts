@@ -16,8 +16,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { deleteDraft, promoteDraftToReport, readDraft } from "@/lib/blob";
 
-export const runtime = "nodejs";
-
 function sameOrigin(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin) return false;

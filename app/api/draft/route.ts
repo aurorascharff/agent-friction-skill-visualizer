@@ -14,8 +14,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ReportSchema } from "@/lib/payload";
 import { newSignedDraftId, writeDraft } from "@/lib/blob";
 
-export const runtime = "nodejs";
-
 // In-memory token bucket per remote IP. Resets on cold start; that's
 // fine for v0 — burst protection only.
 const BUCKET = new Map<string, { tokens: number; updatedAt: number }>();
