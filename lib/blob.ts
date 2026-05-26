@@ -18,7 +18,7 @@
  * can't be forged by clients.
  */
 
-import { put, get, del } from "@vercel/blob";
+import { put, get, del, list } from "@vercel/blob";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Report } from "./payload";
 import { reportToMarkdown } from "./report-to-markdown";
@@ -144,4 +144,60 @@ export async function promoteDraftToReport(report: Report): Promise<string> {
     },
   );
   return url;
+}
+
+/**
+ * List all stored reports. Returns lightweight metadata only — no markdown
+ * bodies. Sorted newest-first by upload time.
+ */
+export type ReportListItem = {
+  /** Path-relative id, e.g. "2026-05/AbCdEfGh.md". Use this with readReportMarkdown. */
+  id: string;
+  /** ISO date string of when the report was uploaded. */
+  uploadedAt: string;
+  /** Blob size in bytes. */
+  size: number;
+};
+
+export async function listReports(): Promise<ReportListItem[]> {
+  const items: ReportListItem[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({
+      prefix: "reports/",
+      limit: 1000,
+      cursor,
+    });
+    for (const blob of page.blobs) {
+      // Skip directory placeholders if any.
+      if (!blob.pathname.endsWith(".md")) continue;
+      items.push({
+        id: blob.pathname.slice("reports/".length),
+        uploadedAt:
+          blob.uploadedAt instanceof Date
+            ? blob.uploadedAt.toISOString()
+            : String(blob.uploadedAt),
+        size: blob.size,
+      });
+    }
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+
+  items.sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1));
+  return items;
+}
+
+/**
+ * Read a stored report's markdown body. `id` is the path-relative id
+ * returned by `listReports`, e.g. "2026-05/AbCdEfGh.md".
+ */
+export async function readReportMarkdown(id: string): Promise<string | null> {
+  // Defence in depth: reject path traversal / shape we did not write.
+  if (!/^[0-9]{4}-[0-9]{2}\/[A-Za-z0-9_-]+\.md$/.test(id)) return null;
+  const result = await get(`reports/${id}`, {
+    access: "private",
+    useCache: false,
+  });
+  if (!result || result.statusCode !== 200 || !result.stream) return null;
+  return new Response(result.stream).text();
 }
