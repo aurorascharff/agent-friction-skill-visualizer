@@ -20,9 +20,7 @@ export async function DraftReview({ draftId }: { draftId: string }) {
   return (
     <>
       <ReviewBanner />
-      <div className="rounded-xl border border-border bg-card/40 backdrop-blur p-5 sm:p-7">
-        <FrictionLogViewer markdown={markdown} />
-      </div>
+      <FrictionLogViewer markdown={markdown} />
       <SubmitBar draftId={draftId} />
     </>
   );
