@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PasteForm } from "./_components/paste-form";
+import { PasteForm } from "@/features/log/components/paste-form";
 
 export const metadata: Metadata = {
   title: "Friction Log Viewer",

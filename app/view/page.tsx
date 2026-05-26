@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { ViewContent, ViewSkeleton } from "../_components/view-content";
+import { ViewContent, ViewSkeleton } from "@/features/log/components/view-content";
 
 export const metadata: Metadata = {
   title: "Friction Log Viewer — View",

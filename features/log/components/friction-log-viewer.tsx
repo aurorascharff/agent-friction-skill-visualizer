@@ -7,7 +7,7 @@ import {
   parseSections,
   type LogEntry,
   type Section,
-} from "../../lib/parse";
+} from "@/lib/parse";
 
 const FRICTION_DOT: Record<string, string> = {
   red: "bg-red-500",

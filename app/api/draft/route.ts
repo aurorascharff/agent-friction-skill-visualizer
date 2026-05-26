@@ -1,18 +1,18 @@
 /**
  * POST /api/draft
  *
- * The passive friction-log skill calls this from the agent process at
- * end-of-task with a JSON-encoded `Report`. The route validates the
- * payload, allocates a signed draft id, writes it to Blob storage, and
- * returns the URL the agent should open in the headed agent-browser.
+ * Unauthenticated ingest endpoint. The passive friction-observe skill
+ * calls this from the agent process at end-of-task with a JSON-encoded
+ * `Report`. The route validates the payload, creates a signed draft,
+ * and returns the review URL.
  *
- * No long-term credentials are returned to the caller — the signed
- * draft id is single-use and expires after 10 minutes.
+ * No long-term credentials are returned — the signed draft id is
+ * single-use and expires after 10 minutes.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 import { ReportSchema } from "@/lib/payload";
-import { newSignedDraftId, writeDraft } from "@/lib/blob";
+import { createDraft } from "@/features/drafts/drafts-queries";
 
 // In-memory token bucket per remote IP. Resets on cold start; that's
 // fine for v0 — burst protection only.
@@ -76,9 +76,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const draftId = newSignedDraftId();
+  let draftId: string;
   try {
-    await writeDraft(draftId, parsed.data);
+    draftId = await createDraft(parsed.data);
   } catch (err) {
     console.error("draft_write_failed", err);
     return NextResponse.json(

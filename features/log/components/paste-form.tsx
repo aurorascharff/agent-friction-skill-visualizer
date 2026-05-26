@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { EXAMPLE_LOG } from "../../lib/example";
-import { encodeShare } from "../../lib/share";
+import { EXAMPLE_LOG } from "@/lib/example";
+import { encodeShare } from "@/lib/share";
 
 export function PasteForm() {
   const [text, setText] = useState("");

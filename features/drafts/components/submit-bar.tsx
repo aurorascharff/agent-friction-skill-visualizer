@@ -2,38 +2,39 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Check, X } from "lucide-react";
+import {
+  submitDraftAction,
+  discardDraftAction,
+} from "../drafts-actions";
 
 type Status = "idle" | "submitting" | "ok" | "error";
 
 export function SubmitBar({ draftId }: { draftId: string }) {
+  const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [errMessage, setErrMessage] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
-  function onClick() {
+  function onSubmit() {
     setErrMessage(null);
     setStatus("submitting");
     startTransition(async () => {
-      try {
-        const res = await fetch("/api/submit", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ draft_id: draftId }),
-        });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as {
-            error?: string;
-          };
-          setErrMessage(data.error ?? `HTTP ${res.status}`);
-          setStatus("error");
-          return;
-        }
-        setStatus("ok");
-      } catch (err) {
-        setErrMessage(err instanceof Error ? err.message : "unknown");
+      const result = await submitDraftAction(draftId);
+      if (!result.ok) {
+        setErrMessage(result.error);
         setStatus("error");
+        return;
       }
+      setStatus("ok");
+    });
+  }
+
+  function onDiscard() {
+    startTransition(async () => {
+      await discardDraftAction(draftId);
+      router.push("/");
     });
   }
 
@@ -48,13 +49,15 @@ export function SubmitBar({ draftId }: { draftId: string }) {
           <SubmittedRow />
         ) : (
           <>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            <button
+              type="button"
+              onClick={onDiscard}
+              disabled={isPending}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-40"
             >
               <X className="w-3.5 h-3.5" />
               Discard
-            </Link>
+            </button>
             <div className="ml-auto flex items-center gap-3">
               {status === "error" && errMessage ? (
                 <span className="text-xs text-red-400">
@@ -66,8 +69,9 @@ export function SubmitBar({ draftId }: { draftId: string }) {
                 </span>
               )}
               <button
-                onClick={onClick}
-                disabled={status === "submitting"}
+                type="button"
+                onClick={onSubmit}
+                disabled={status === "submitting" || isPending}
                 className="group inline-flex items-center gap-1.5 rounded-md bg-foreground text-background px-3.5 py-1.5 text-xs font-medium hover:bg-foreground/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_2px_8px_-2px_rgba(255,255,255,0.15)]"
               >
                 {status === "submitting" ? "Submitting…" : "Submit report"}

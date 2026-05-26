@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Link2 } from "lucide-react";
 import { FrictionLogViewer } from "./friction-log-viewer";
-import { decodeShare, readShareFragment } from "../../lib/share";
+import { decodeShare, readShareFragment } from "@/lib/share";
 
 type State =
   | { kind: "loading" }

@@ -6,7 +6,7 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { readReportMarkdown } from "@/lib/blob";
+import { getReportMarkdown } from "@/features/reports/reports-queries";
 
 function getApiToken(): string {
   const t = process.env.REPORTS_API_TOKEN;
@@ -46,7 +46,7 @@ export async function GET(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { month, id } = await params;
-  const markdown = await readReportMarkdown(`${month}/${id}.md`);
+  const markdown = await getReportMarkdown(`${month}/${id}.md`);
   if (markdown === null) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
