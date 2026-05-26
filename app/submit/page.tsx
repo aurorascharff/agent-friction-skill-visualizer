@@ -5,7 +5,6 @@ import {
   DraftReview,
   DraftReviewSkeleton,
 } from "@/features/drafts/components/draft-review";
-import { Crossfade } from "@/components/ui/crossfade";
 
 export const unstable_prefetch = "force-runtime";
 
@@ -23,12 +22,10 @@ export default function SubmitPage({
   return (
     <main className="pb-24">
       <Suspense fallback={<DraftReviewSkeleton />}>
-        <Crossfade>
-          {searchParams.then(({ draft }) => {
-            if (!draft) notFound();
-            return <DraftReview draftId={draft} />;
-          })}
-        </Crossfade>
+        {searchParams.then(({ draft }) => {
+          if (!draft) notFound();
+          return <DraftReview draftId={draft} />;
+        })}
       </Suspense>
     </main>
   );
