@@ -21,6 +21,7 @@
 import { put, get, del } from "@vercel/blob";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Report } from "./payload";
+import { reportToMarkdown } from "./report-to-markdown";
 
 const DRAFT_TTL_MS = 10 * 60 * 1000;
 
@@ -131,15 +132,13 @@ export async function promoteDraftToReport(report: Report): Promise<string> {
   const now = new Date();
   const yyyyMm = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const reportId = randomBytes(12).toString("base64url");
+  const markdown = reportToMarkdown(report, now.toISOString());
   const { url } = await put(
-    `reports/${yyyyMm}/${reportId}.json`,
-    JSON.stringify({
-      received_at: now.toISOString(),
-      report,
-    }),
+    `reports/${yyyyMm}/${reportId}.md`,
+    markdown,
     {
       access: "private",
-      contentType: "application/json",
+      contentType: "text/markdown; charset=utf-8",
       addRandomSuffix: false,
       allowOverwrite: false,
     },
