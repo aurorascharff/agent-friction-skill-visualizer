@@ -331,7 +331,7 @@ export function FrictionLogViewer({ markdown }: { markdown: string }) {
 
   const sectionOrder = (sectionTitle: string): number => {
     const lower = sectionTitle.toLowerCase();
-    if (lower === "run info") return 0;
+    if (lower === "run info" || lower === "header") return 0;
     if (lower === "prompt") return 1;
     if (lower === "tool timeline") return 2;
     if (lower === "summary") return 3;

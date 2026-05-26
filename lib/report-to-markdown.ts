@@ -30,6 +30,10 @@ export function reportToMarkdown(report: Report, receivedAt: string): string {
 
   lines.push("# Friction Report");
   lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push("## Header");
+  lines.push("");
   lines.push(`**Received:** ${receivedAt}`);
   lines.push(
     `**Stack:** ${report.framework} ${report.framework_version}`,

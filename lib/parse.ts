@@ -156,6 +156,7 @@ export function parseSections(markdown: string): Section[] {
         entries: [],
         subsections: [],
         defaultOpen:
+          lower === "header" ||
           lower.includes("summary") ||
           lower.includes("action") ||
           lower.includes("log"),

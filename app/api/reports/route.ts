@@ -7,7 +7,7 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { getReports } from "@/features/reports/reports-queries";
+import { getEnrichedReports } from "@/features/reports/reports-queries";
 
 function getApiToken(): string {
   const t = process.env.REPORTS_API_TOKEN;
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
-    const reports = await getReports();
+    const reports = await getEnrichedReports();
     return NextResponse.json({ reports });
   } catch (err) {
     console.error("list_reports_failed", err);
