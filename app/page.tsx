@@ -7,8 +7,6 @@ export const metadata: Metadata = {
     "Paste a friction log produced by the agent-friction skill and view it cleanly.",
 };
 
-export const unstable_instant = {};
-
 export default function HomePage() {
   return (
     <main className="relative">

@@ -2,17 +2,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import {
-  ViewContent,
-  ViewSkeleton,
-} from "../_components/view-content";
+import { ViewContent, ViewSkeleton } from "../_components/view-content";
 
 export const metadata: Metadata = {
   title: "Friction Log Viewer — View",
   description: "Render a friction log from a shareable URL fragment.",
 };
-
-export const unstable_instant = {};
 
 export default function ViewPage() {
   return (
