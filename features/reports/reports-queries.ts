@@ -12,7 +12,8 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 import { cache } from "react";
-import { listAll, readPrivateText } from "@/lib/blob/blob-client";
+import { listAll, readPrivateJson, readPrivateText } from "@/lib/blob/blob-client";
+import type { Report } from "@/lib/payload";
 
 export const REPORTS_TAG = "friction-reports";
 
@@ -21,6 +22,11 @@ export type ReportListItem = {
   id: string;
   uploadedAt: string;
   size: number;
+};
+
+type ReportEnvelope = {
+  received_at: string;
+  report: Report;
 };
 
 async function listReportsImpl(): Promise<ReportListItem[]> {
@@ -55,3 +61,92 @@ async function getReportMarkdownImpl(id: string): Promise<string | null> {
 }
 
 export const getReportMarkdown = cache(getReportMarkdownImpl);
+
+async function getReportJsonImpl(
+  id: string,
+): Promise<ReportEnvelope | null> {
+  "use cache";
+  cacheTag(REPORTS_TAG);
+  cacheLife({ stale: 60 * 60, revalidate: 24 * 60 * 60 });
+
+  // id matches "2026-05/<rest>" — no extension on input.
+  if (!/^[0-9]{4}-[0-9]{2}\/[A-Za-z0-9_-]+$/.test(id)) return null;
+  return readPrivateJson<ReportEnvelope>(`reports/${id}.json`);
+}
+
+export const getReportJson = cache(getReportJsonImpl);
+
+/**
+ * Aggregated friction points across every stored report. Used by triage
+ * UIs that need a flat row-per-point view rather than per-report.
+ *
+ * One Blob list + N JSON reads. Cached with the REPORTS_TAG so it
+ * invalidates on submission alongside the others.
+ */
+export type AggregatedPoint = {
+  /** "<month>/<id>" — the slug used to link back to the report. */
+  reportId: string;
+  /** Index within the report's friction_points array. */
+  index: number;
+  /** ISO date string from the report envelope. */
+  receivedAt: string;
+  framework: string;
+  frameworkVersion: string;
+  severity: "red" | "yellow" | "green";
+  title: string;
+  sourceTag: string;
+  fileKind?: string;
+};
+
+async function getAggregatedPointsImpl(): Promise<AggregatedPoint[]> {
+  "use cache";
+  cacheTag(REPORTS_TAG);
+  cacheLife({ stale: 30, revalidate: 60 });
+
+  const blobs = await listAll("reports/");
+  const jsonIds: string[] = [];
+  for (const blob of blobs) {
+    if (!blob.pathname.endsWith(".json")) continue;
+    // strip "reports/" and ".json"
+    const rest = blob.pathname.slice("reports/".length, -".json".length);
+    jsonIds.push(rest);
+  }
+
+  const envelopes = await Promise.all(
+    jsonIds.map(async (id) => ({ id, env: await getReportJsonImpl(id) })),
+  );
+
+  const points: AggregatedPoint[] = [];
+  for (const { id, env } of envelopes) {
+    if (!env) continue;
+    env.report.friction_points.forEach((fp, index) => {
+      points.push({
+        reportId: id,
+        index,
+        receivedAt: env.received_at,
+        framework: env.report.framework,
+        frameworkVersion: env.report.framework_version,
+        severity: fp.severity,
+        title: fp.title,
+        sourceTag: fp.source_tag,
+        fileKind: fp.file_kind,
+      });
+    });
+  }
+
+  // Severity first (red > yellow > green), then newest within.
+  const severityRank: Record<"red" | "yellow" | "green", number> = {
+    red: 0,
+    yellow: 1,
+    green: 2,
+  };
+  points.sort((a, b) => {
+    const s = severityRank[a.severity] - severityRank[b.severity];
+    if (s !== 0) return s;
+    return a.receivedAt < b.receivedAt ? 1 : -1;
+  });
+  return points;
+}
+
+export const getAggregatedPoints = cache(getAggregatedPointsImpl);
+

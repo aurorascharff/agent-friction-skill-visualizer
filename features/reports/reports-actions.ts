@@ -28,6 +28,13 @@ export async function promoteDraftToReport(report: Report): Promise<string> {
     markdown,
     "text/markdown; charset=utf-8",
   );
+  // Also write the structured payload so triage UIs don't have to parse
+  // the markdown back. Markdown is for humans; JSON is for tools.
+  await putPrivate(
+    `reports/${yyyyMm}/${reportId}.json`,
+    JSON.stringify({ received_at: now.toISOString(), report }),
+    "application/json",
+  );
   updateTag(REPORTS_TAG);
   return url;
 }
