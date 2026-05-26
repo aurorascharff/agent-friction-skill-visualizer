@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PasteForm } from "@/features/log/components/paste-form";
+import { SeverityChips } from "@/components/ui/severity-chips";
 
 export const metadata: Metadata = {
   title: "Friction Log Viewer",
@@ -26,7 +27,7 @@ export default function HomePage() {
           <h1 className="text-center text-4xl sm:text-5xl font-semibold tracking-tight mb-3 text-foreground">
             Friction Log.
           </h1>
-          <p className="text-center text-sm text-muted-foreground mb-8 [text-wrap:balance] max-w-md mx-auto">
+          <p className="text-center text-sm text-muted-foreground mb-6 [text-wrap:balance] max-w-md mx-auto">
             Paste a log from the{" "}
             <a
               href="https://github.com/aurorascharff/agent-friction-skill"
@@ -38,6 +39,8 @@ export default function HomePage() {
             </a>{" "}
             to read it cleanly. Nothing leaves your browser.
           </p>
+
+          <SeverityChips />
 
           {/* Editor-style card */}
           <div className="rounded-xl border border-border bg-card/80 backdrop-blur shadow-2xl shadow-black/40 overflow-hidden">

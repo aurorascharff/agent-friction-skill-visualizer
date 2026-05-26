@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FrictionMark } from "@/components/ui/friction-mark";
 import "./globals.css";
 
 function GitHubMark({ className }: { className?: string }) {
@@ -35,8 +36,9 @@ export default function RootLayout({
           <header className="mb-10 flex items-center justify-between gap-4">
             <Link
               href="/"
-              className="text-lg font-semibold tracking-tight text-foreground hover:text-foreground/80 transition-colors"
+              className="inline-flex items-center gap-2.5 text-lg font-semibold tracking-tight text-foreground hover:text-foreground/80 transition-colors"
             >
+              <FrictionMark />
               Friction Log Viewer
             </Link>
             <a
