@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Link2 } from "lucide-react";
+import { Check, Copy, Link2 } from "lucide-react";
 import { FrictionLogViewer } from "./friction-log-viewer";
 import { decodeShare, readShareFragment } from "@/lib/share";
 
@@ -35,7 +35,7 @@ function scrollAndHighlight(entryId: string) {
 
 export function ViewContent() {
   const [state, setState] = useState<State>({ kind: "loading" });
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"link" | "md" | null>(null);
 
   useEffect(() => {
     const fragment = readShareFragment();
@@ -64,8 +64,19 @@ export function ViewContent() {
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied("link");
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      /* clipboard blocked */
+    }
+  }
+
+  async function handleCopyMarkdown() {
+    if (state.kind !== "ok") return;
+    try {
+      await navigator.clipboard.writeText(state.markdown);
+      setCopied("md");
+      setTimeout(() => setCopied(null), 2000);
     } catch {
       /* clipboard blocked */
     }
@@ -74,12 +85,28 @@ export function ViewContent() {
   return (
     <>
       {state.kind === "ok" && (
-        <div className="flex justify-end mb-6">
+        <div className="flex justify-end gap-2 mb-6">
+          <button
+            onClick={handleCopyMarkdown}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-xs font-medium hover:bg-accent/70 transition-colors"
+          >
+            {copied === "md" ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-green-500" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                Copy markdown
+              </>
+            )}
+          </button>
           <button
             onClick={handleCopyLink}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-xs font-medium hover:bg-accent/70 transition-colors"
           >
-            {copied ? (
+            {copied === "link" ? (
               <>
                 <Check className="w-3.5 h-3.5 text-green-500" />
                 Link copied
