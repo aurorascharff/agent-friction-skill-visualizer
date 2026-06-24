@@ -335,7 +335,13 @@ function scrollAndHighlight(id: string) {
   window.setTimeout(() => el.classList.remove("animate-highlight"), 2600);
 }
 
-export function FrictionLogViewer({ markdown }: { markdown: string }) {
+export function FrictionLogViewer({
+  markdown,
+  actions,
+}: {
+  markdown: string;
+  actions?: ReactNode;
+}) {
   const title = extractTitle(markdown);
   const allSections = parseSections(markdown);
 
@@ -378,10 +384,17 @@ export function FrictionLogViewer({ markdown }: { markdown: string }) {
 
   return (
     <div>
-      {title && (
-        <h1 className="text-2xl font-semibold tracking-tight mb-6 [overflow-wrap:break-word]">
-          {title}
-        </h1>
+      {(title || actions) && (
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          {title ? (
+            <h1 className="text-2xl font-semibold tracking-tight [overflow-wrap:break-word]">
+              {title}
+            </h1>
+          ) : (
+            <span />
+          )}
+          {actions && <div className="flex shrink-0 gap-2">{actions}</div>}
+        </div>
       )}
       <div className="space-y-1">
         {sections.map((section, i) => (

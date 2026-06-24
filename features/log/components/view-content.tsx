@@ -84,43 +84,6 @@ export function ViewContent() {
 
   return (
     <>
-      {state.kind === "ok" && (
-        <div className="flex justify-end gap-2 mb-6">
-          <button
-            onClick={handleCopyMarkdown}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-xs font-medium hover:bg-accent/70 transition-colors"
-          >
-            {copied === "md" ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-green-500" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                Copy markdown
-              </>
-            )}
-          </button>
-          <button
-            onClick={handleCopyLink}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-xs font-medium hover:bg-accent/70 transition-colors"
-          >
-            {copied === "link" ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-green-500" />
-                Link copied
-              </>
-            ) : (
-              <>
-                <Link2 className="w-3.5 h-3.5" />
-                Copy share link
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
       {state.kind === "loading" && <ViewSkeleton />}
 
       {state.kind === "empty" && (
@@ -146,7 +109,47 @@ export function ViewContent() {
         </div>
       )}
 
-      {state.kind === "ok" && <FrictionLogViewer markdown={state.markdown} />}
+      {state.kind === "ok" && (
+        <FrictionLogViewer
+          markdown={state.markdown}
+          actions={
+            <>
+              <button
+                onClick={handleCopyMarkdown}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-xs font-medium hover:bg-accent/70 transition-colors"
+              >
+                {copied === "md" ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy markdown
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-xs font-medium hover:bg-accent/70 transition-colors"
+              >
+                {copied === "link" ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                    Link copied
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="w-3.5 h-3.5" />
+                    Copy share link
+                  </>
+                )}
+              </button>
+            </>
+          }
+        />
+      )}
     </>
   );
 }
