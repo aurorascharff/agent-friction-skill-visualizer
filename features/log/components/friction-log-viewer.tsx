@@ -167,9 +167,7 @@ function EntryToggle({
       >
         {entryId && <AnchorLink id={entryId} />}
         {dot && (
-          <span
-            className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`}
-          />
+          <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
         )}
         {ActionIcon && (
           <ActionIcon className="w-3.5 h-3.5 mt-1 shrink-0 text-muted-foreground/60" />
@@ -187,9 +185,7 @@ function EntryToggle({
         {entryId && <AnchorLink id={entryId} />}
         <ChevronRight className="w-3.5 h-3.5 mt-1 shrink-0 text-muted-foreground/60 transition-transform group-open/entry:rotate-90" />
         {dot && (
-          <span
-            className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`}
-          />
+          <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
         )}
         {ActionIcon && (
           <ActionIcon className="w-3.5 h-3.5 mt-1 shrink-0 text-muted-foreground/60" />
