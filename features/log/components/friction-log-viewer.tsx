@@ -10,7 +10,7 @@
  */
 
 import { type ReactNode, useState, useEffect } from "react";
-import { Check, ChevronRight, Link2, Search, Wrench } from "lucide-react";
+import { Check, ChevronRight, Copy, Link2, Search, Wrench } from "lucide-react";
 import {
   extractTitle,
   parseSections,
@@ -143,6 +143,51 @@ function AnchorLink({ id }: { id: string }) {
   );
 }
 
+function CodeBlock({
+  text,
+  lang,
+  entryId,
+}: {
+  text: string;
+  lang?: string;
+  entryId?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div id={entryId} className="group/code my-2 first:mt-0 last:mb-0">
+      <div className="relative rounded-md border border-border/50 bg-muted/30 overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-1 border-b border-border/40 bg-muted/40">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+            {lang ?? "code"}
+          </span>
+          <button
+            onClick={handleCopy}
+            aria-label={copied ? "Copied" : "Copy code"}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors opacity-0 group-hover/code:opacity-100 focus-visible:opacity-100"
+          >
+            {copied ? (
+              <Check className="w-3 h-3 text-green-500" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <pre className="px-3 py-2 overflow-x-auto text-[12px] leading-relaxed font-mono text-foreground/85">
+          <code>{text}</code>
+        </pre>
+      </div>
+    </div>
+  );
+}
+
 function EntryToggle({
   entry,
   entryId,
@@ -150,6 +195,10 @@ function EntryToggle({
   entry: LogEntry;
   entryId?: string;
 }) {
+  if (entry.kind === "code") {
+    return <CodeBlock text={entry.text} lang={entry.lang} entryId={entryId} />;
+  }
+
   const isAction = entry.friction === "action";
   const hasChildren = entry.children.length > 0;
   const dot = entry.friction && !isAction ? FRICTION_DOT[entry.friction] : null;

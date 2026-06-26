@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <div className="mx-auto max-w-4xl px-6 sm:px-8 py-8 sm:py-12">
+        <div className="mx-auto max-w-6xl px-6 sm:px-8 py-8 sm:py-12">
           <header className="mb-10 flex items-center justify-between gap-4">
             <Link
               href="/"

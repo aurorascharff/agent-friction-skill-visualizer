@@ -11,6 +11,8 @@ export type LogEntry = {
   indent: number;
   friction: "red" | "yellow" | "green" | "action" | null;
   actionIcon?: "wrench" | "search";
+  kind?: "code";
+  lang?: string;
   children: LogEntry[];
 };
 
@@ -38,10 +40,55 @@ export function parseLogEntries(text: string): LogEntry[] {
     { entries: root, indent: -1 },
   ];
 
-  for (const raw of lines) {
+  let i = 0;
+  while (i < lines.length) {
+    const raw = lines[i]!;
     const trimmed = raw.trim();
-    if (!trimmed) continue;
-    if (/^[─\-]{3,}$/.test(trimmed)) continue;
+
+    // Fenced code block: ```lang? ... ```. Slurp every line until the
+    // closing fence and emit a single entry of kind "code" so the renderer
+    // shows a <pre><code> block instead of a sequence of bullet rows.
+    const fenceOpen = /^(\s*)```([\w+-]*)\s*$/.exec(raw);
+    if (fenceOpen) {
+      const fenceIndent = fenceOpen[1]!.length;
+      const lang = fenceOpen[2] || undefined;
+      const bodyLines: string[] = [];
+      i += 1;
+      while (i < lines.length) {
+        const inner = lines[i]!;
+        if (/^\s*```\s*$/.test(inner)) {
+          i += 1;
+          break;
+        }
+        bodyLines.push(inner);
+        i += 1;
+      }
+      const entry: LogEntry = {
+        text: bodyLines.join("\n"),
+        indent: fenceIndent,
+        friction: null,
+        kind: "code",
+        lang,
+        children: [],
+      };
+      while (
+        stack.length > 1 &&
+        stack[stack.length - 1]!.indent >= fenceIndent
+      ) {
+        stack.pop();
+      }
+      stack[stack.length - 1]!.entries.push(entry);
+      continue;
+    }
+
+    if (!trimmed) {
+      i += 1;
+      continue;
+    }
+    if (/^[─\-]{3,}$/.test(trimmed)) {
+      i += 1;
+      continue;
+    }
 
     const leadingSpaces = raw.search(/\S/);
     const isBullet = /^[•\-]\s/.test(trimmed) || /^\*\s(?!\*)/.test(trimmed);
@@ -77,6 +124,8 @@ export function parseLogEntries(text: string): LogEntry[] {
     if (isBullet) {
       stack.push({ entries: entry.children, indent });
     }
+
+    i += 1;
   }
 
   return root;
