@@ -70,28 +70,54 @@ function FormattedText({ text }: { text: string }) {
     sourceTags.push({ label: tag, style: SOURCE_TAG_STYLE[tag] ?? "" });
     return "";
   });
-  const stripped = cleaned.replace(/\*\*(.+?)\*\*/g, "$1");
   const parts: ReactNode[] = [];
-  const regex = /`([^`]+)`/g;
+  const regex =
+    /(`([^`]+)`|\*\*(.+?)\*\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|_([^_\n]+)_)/g;
   let lastIndex = 0;
   let match;
-  while ((match = regex.exec(stripped)) !== null) {
+  while ((match = regex.exec(cleaned)) !== null) {
     if (match.index > lastIndex)
       parts.push(
-        ...autoCodeify(stripped.slice(lastIndex, match.index), match.index),
+        ...autoCodeify(cleaned.slice(lastIndex, match.index), match.index),
       );
-    parts.push(
-      <code
-        key={match.index}
-        className="rounded bg-muted px-1 py-0.5 text-[0.85em] font-mono text-foreground/90"
-      >
-        {match[1]}
-      </code>,
-    );
+    if (match[2]) {
+      parts.push(
+        <code
+          key={match.index}
+          className="rounded bg-muted px-1 py-0.5 text-[0.85em] font-mono text-foreground/90"
+        >
+          {match[2]}
+        </code>,
+      );
+    } else if (match[3]) {
+      parts.push(
+        <strong key={match.index} className="font-semibold text-foreground">
+          {match[3]}
+        </strong>,
+      );
+    } else if (match[4] && match[5]) {
+      parts.push(
+        <a
+          key={match.index}
+          href={match[5]}
+          target="_blank"
+          rel="noreferrer"
+          className="text-foreground underline underline-offset-2 hover:text-foreground/80"
+        >
+          {match[4]}
+        </a>,
+      );
+    } else if (match[6]) {
+      parts.push(
+        <em key={match.index} className="italic">
+          {match[6]}
+        </em>,
+      );
+    }
     lastIndex = match.index + match[0].length;
   }
-  if (lastIndex < stripped.length)
-    parts.push(...autoCodeify(stripped.slice(lastIndex), lastIndex));
+  if (lastIndex < cleaned.length)
+    parts.push(...autoCodeify(cleaned.slice(lastIndex), lastIndex));
   return (
     <>
       {parts}
